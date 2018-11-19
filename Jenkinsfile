@@ -4,7 +4,7 @@ node {
     }
 
     stage("Build+Deploy") {
-        def server = Artifactory.newServer url: 'host.docker.internal:8081', username: 'test', password: 'test'
+        def server = Artifactory.newServer url: 'http://host.docker.internal:8081/artifactory', username: 'test', password: 'test'
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.resolver server: server, releaseRepo: 'all-repos', snapshotRepo: 'all-repos'
         rtMaven.deployer server: server, releaseRepo: 'local-repo', snapshotRepo: 'local-repo'
