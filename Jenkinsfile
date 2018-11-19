@@ -4,6 +4,6 @@ node {
     }
 
     stage("Build") {
-        sh '"./mvnw -B -s settings.xml clean install"'
+        sh "./mvnw -B -s settings.xml clean install"
     }
 }
