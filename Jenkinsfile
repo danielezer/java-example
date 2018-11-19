@@ -8,7 +8,7 @@ node {
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.resolver server: server, releaseRepo: 'all-repos', snapshotRepo: 'all-repos'
         rtMaven.deployer server: server, releaseRepo: 'local-repo', snapshotRepo: 'local-repo'
-        env.MAVEN_HOME = '/usr/local/opt/maven@3.5'
+        rtMaven.tool = 'maven tool maven-3.5.3'
         def buildInfo = rtMaven.run pom: 'maven-example/pom.xml', goals: 'clean install'
         server.publishBuildInfo buildInfo
     }
