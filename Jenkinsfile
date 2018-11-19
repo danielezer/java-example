@@ -4,6 +4,8 @@ node {
     }
 
     stage("Build") {
-        sh "mvn -B -s settings.xml clean install"
+        docker.image('maven:3.5.3') { c ->
+            sh '"mvn -B -s settings.xml clean install"'
+        }
     }
 }
