@@ -1,4 +1,4 @@
-node('generic') {
+node {
     stage("checkout") {
         checkout scm
     }
