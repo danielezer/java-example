@@ -13,7 +13,7 @@
     </mirrors>
     <servers>
         <server>
-            <id>centralmirror</id>
+            <id>local-repo</id>
             <username>test</username>
             <password>test</password>
         </server>
