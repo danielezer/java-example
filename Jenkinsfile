@@ -11,5 +11,12 @@ node {
         String mvnGoals = "clean install -DartifactVersion=${env.BUILD_NUMBER} -s settings.xml"
         def buildInfo = rtMaven.run pom: 'pom.xml', goals: mvnGoals
         server.publishBuildInfo buildInfo
+        def scanConfig = [
+                'buildName'      : buildInfo.name,
+                'buildNumber'    : buildInfo.number
+        ]
+        def scanResult = server.xrayScan scanConfig
+        echo scanResult as String
+
     }
 }
