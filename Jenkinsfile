@@ -14,7 +14,8 @@ node {
         server.publishBuildInfo buildInfo
         def scanConfig = [
                 'buildName'      : buildInfo.name,
-                'buildNumber'    : buildInfo.number
+                'buildNumber'    : buildInfo.number,
+                'failBuild'      : true
         ]
         def scanResult = server.xrayScan scanConfig
         echo scanResult as String
