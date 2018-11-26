@@ -21,9 +21,9 @@
       <type>pom</type>
     </dependency>
     <dependency>
-      <groupId>abengoa</groupId>
-      <artifactId>clj-stripe</artifactId>
-      <version>1.0.0</version>
+      <groupId>aero</groupId>
+      <artifactId>aero</artifactId>
+      <version>0.1.0</version>
     </dependency>
   </dependencies>
   <distributionManagement>
