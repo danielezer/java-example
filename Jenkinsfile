@@ -8,8 +8,9 @@ node {
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'local-repo', snapshotRepo: 'local-repo'
         rtMaven.tool = 'maven-3.5.3'
-        String mvnGoals = "clean install -DartifactVersion=${env.BUILD_NUMBER} -s settings.xml"
+        String mvnGoals = "-B clean install -DartifactVersion=${env.BUILD_NUMBER} -s settings.xml"
         def buildInfo = rtMaven.run pom: 'pom.xml', goals: mvnGoals
+        buildInfo.env.collect()
         server.publishBuildInfo buildInfo
         def scanConfig = [
                 'buildName'      : buildInfo.name,
