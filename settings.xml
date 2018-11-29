@@ -7,15 +7,15 @@
         <mirror>
             <id>centralmirror</id>
             <name>artifactory local</name>
-            <url>http://host.docker.internal:8081/artifactory/all-repos</url>
+            <url>http://host.docker.internal:8081/artifactory/libs-release</url>
             <mirrorOf>*</mirrorOf>
         </mirror>
     </mirrors>
     <servers>
         <server>
             <id>local-repo</id>
-            <username>test</username>
-            <password>test</password>
+            <username>admin</username>
+            <password>password</password>
         </server>
     </servers>
 </settings>

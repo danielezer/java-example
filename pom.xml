@@ -29,8 +29,6 @@
   <distributionManagement>
     <repository>
       <id>local-repo</id>
-      <name>artifactory-local</name>
-      <url>http://host.docker.internal:8081/artifactory/local-repo</url>
     </repository>
   </distributionManagement>
 </project>
