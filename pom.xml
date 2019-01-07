@@ -30,7 +30,7 @@
     <repository>
       <id>local-repo</id>
       <name>artifactory-local</name>
-      <url>http://host.docker.internal:8081/artifactory/libs-snapshot-local</url>
+      <url>http://artifactory-artifactory/artifactory/libs-snapshot-local</url>
     </repository>
   </distributionManagement>
 </project>

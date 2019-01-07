@@ -7,7 +7,7 @@
         <mirror>
             <id>centralmirror</id>
             <name>artifactory local</name>
-            <url>http://host.docker.internal:8081/artifactory/libs-release</url>
+            <url>http://artifactory-artifactory/artifactory/libs-release</url>
             <mirrorOf>*</mirrorOf>
         </mirror>
     </mirrors>
