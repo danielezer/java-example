@@ -50,7 +50,7 @@ node('generic') {
              "files": [
               {
                   "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${env.BUILD_NUMBER}-SNAPSHOT/java-project-*.jar",
-                  "target": "target/downloads/"
+                  "target": "target/downloads/",
                   "flat": "true"
                 }
              ]
