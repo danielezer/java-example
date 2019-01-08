@@ -1,10 +1,20 @@
 node('generic') {
 
     def server
+    def rtFullUrl
     def rtIpAddress
+    def buildNumber
+    def mavenBuildName
+    def dockerBuildName
+    def mavenPromotionRepo = 'stable-maven-repo'
+    def distributionUrl = "http://35.195.75.184"
 
     stage("checkout") {
         checkout scm
+        buildNumber = env.BUILD_NUMNER
+        def jobName = env.JOB_NAME
+        mavenBuildName = "maven-${jobName}"
+        dockerBuildName = "docker-${jobName}"
     }
 
     stage("Build+Deploy") {
@@ -15,9 +25,9 @@ node('generic') {
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
         rtMaven.tool = 'maven-3.5.3'
-        String mvnGoals = "-B clean install -DartifactVersion=${env.BUILD_NUMBER} -s settings.xml"
+        String mvnGoals = "-B clean install -DartifactVersion=${buildNumber} -s settings.xml"
         def buildInfo = Artifactory.newBuildInfo()
-        buildInfo.name = "java-${env.JOB_NAME}"
+        buildInfo.name = mavenBuildName
         buildInfo.env.collect()
         rtMaven.run pom: 'pom.xml', goals: mvnGoals, buildInfo: buildInfo
         server.publishBuildInfo buildInfo
@@ -31,7 +41,7 @@ node('generic') {
         def promotionConfig = [
                 'buildName'          : buildInfo.name,
                 'buildNumber'        : buildInfo.number,
-                'targetRepo'         : 'stable-maven-repo',
+                'targetRepo'         : mavenPromotionRepo,
                 'comment'            : 'This is a stable java-project version',
                 'status'             : 'Released',
                 'sourceRepo'         : 'libs-snapshot-local',
@@ -45,11 +55,11 @@ node('generic') {
 
     stage("Build docker image") {
         def dockerBuildInfo = Artifactory.newBuildInfo()
-        dockerBuildInfo.name = "docker-${env.JOB_NAME}"
+        dockerBuildInfo.name = dockerBuildName
         def downloadSpec = """{
              "files": [
               {
-                  "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${env.BUILD_NUMBER}-SNAPSHOT/java-project-*.jar",
+                  "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${buildNumber}-SNAPSHOT/java-project-*.jar",
                   "target": "target/downloads/",
                   "flat": "true"
                 }
@@ -58,7 +68,7 @@ node('generic') {
 
         server.download spec: downloadSpec, buildInfo: dockerBuildInfo
         def rtDocker = Artifactory.docker server: server
-        def dockerImageTag = "${rtIpAddress}/docker-java:${env.BUILD_NUMBER}"
+        def dockerImageTag = "${rtIpAddress}/docker-java:${buildNumber}"
         docker.build(dockerImageTag)
         dockerBuildInfo.env.collect()
         rtDocker.push(dockerImageTag, 'docker-repo', dockerBuildInfo)
@@ -84,4 +94,73 @@ node('generic') {
         Artifactory.addInteractivePromotion server: server, promotionConfig: dockerPromotionConfig, displayName: "Promote docker image to stable repo"
 
     }
+
+    stage("Create release bundle") {
+
+        withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
+
+            def rtServiceId = sh(returnStdout: true, script: 'curl -u ${ARTIFACTORY_CREDS} -X GET ${rtFullUrl}/api/system/service_id').trim()
+
+            def aqlQuery = """
+            items.find({
+              \"\$and\": [
+                {
+                  \"\$or\": [
+                    {
+                      \"repo\": {
+                        \"\$eq\": \"${mavenPromotionRepo}\"
+                      }
+                    }
+                  ]
+                },
+                {
+                  \"\$or\": [
+                    {
+                      \"\$and\": [
+                        {
+                          \"artifact.module.build.name\": {
+                            \"\$eq\": \"${mavenBuildName}\"
+                          }
+                        },
+                        {
+                          \"artifact.module.build.number\": {
+                            \"\$eq\": \"${buildNumber}\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }).include(\"sha256\",\"updated\",\"modified_by\",\"created\",\"id\",\"original_md5\",\"depth\",\"actual_sha1\",\"property.value\",\"modified\",\"property.key\",\"actual_md5\",\"created_by\",\"type\",\"name\",\"repo\",\"original_sha1\",\"size\",\"path\")
+            """
+
+            def releaseBundleBody = """
+                {
+                  \"name\": \"java-project-bundle\",
+                  \"version\": \"${buildNumber}\",
+                  \"dry_run\": false,
+                  \"sign_immediately\": true,
+                  \"description\": \"Release bundle for the example java-project\",
+                  \"spec\": {
+                    \"source_artifactory_id\": \"${rtServiceId}\",
+                    \"queries\": [
+                      {
+                        \"aql\": \"${aqlQuery}\",
+                        \"query_name\": \"java-project-query\"
+                      }
+                    ]
+                  }
+                }
+            """
+
+            def releaseBundleBodyJsonFile = 'release-bundle-body.json'
+            writeFile file: 'release-bundle-body.json', text: releaseBundleBody
+
+            archiveArtifacts artifacts: 'release-bundle-body.json'
+
+            sh "curl -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
+        }
+    }
+
 }
