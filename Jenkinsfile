@@ -11,7 +11,7 @@ node('generic') {
 
     stage("checkout") {
         checkout scm
-        buildNumber = env.BUILD_NUMNER
+        buildNumber = env.BUILD_NUMBER
         def jobName = env.JOB_NAME
         mavenBuildName = "maven-${jobName}"
         dockerBuildName = "docker-${jobName}"
@@ -99,32 +99,32 @@ node('generic') {
 
         withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
 
-            def rtServiceId = sh(returnStdout: true, script: 'curl -u ${ARTIFACTORY_CREDS} -X GET ${rtFullUrl}/api/system/service_id').trim()
+            def rtServiceId = sh(returnStdout: true, script: "curl -s -u ${ARTIFACTORY_CREDS} -X GET ${rtFullUrl}/api/system/service_id").trim()
 
             def aqlQuery = """
             items.find({
-              \"\$and\": [
+              \\\"\$and\\\": [
                 {
-                  \"\$or\": [
+                  \\\"\$or\\\": [
                     {
-                      \"repo\": {
-                        \"\$eq\": \"${mavenPromotionRepo}\"
+                      \\\"repo\\\": {
+                        \\\"\$eq\\\": \\\"${mavenPromotionRepo}\\\"
                       }
                     }
                   ]
                 },
                 {
-                  \"\$or\": [
+                  \\\"\$or\\\": [
                     {
-                      \"\$and\": [
+                      \\\"\$and\\\": [
                         {
-                          \"artifact.module.build.name\": {
-                            \"\$eq\": \"${mavenBuildName}\"
+                          \\\"artifact.module.build.name\\\": {
+                            \\\"\$eq\\\": \\\"${mavenBuildName}\\\"
                           }
                         },
                         {
-                          \"artifact.module.build.number\": {
-                            \"\$eq\": \"${buildNumber}\"
+                          \\\"artifact.module.build.number\\\": {
+                            \\\"\$eq\\\": \\\"${buildNumber}\\\"
                           }
                         }
                       ]
@@ -132,8 +132,8 @@ node('generic') {
                   ]
                 }
               ]
-            }).include(\"sha256\",\"updated\",\"modified_by\",\"created\",\"id\",\"original_md5\",\"depth\",\"actual_sha1\",\"property.value\",\"modified\",\"property.key\",\"actual_md5\",\"created_by\",\"type\",\"name\",\"repo\",\"original_sha1\",\"size\",\"path\")
-            """
+            }).include(\\\"sha256\\\",\\\"updated\\\",\\\"modified_by\\\",\\\"created\\\",\\\"id\\\",\\\"original_md5\\\",\\\"depth\\\",\\\"actual_sha1\\\",\\\"property.value\\\",\\\"modified\\\",\\\"property.key\\\",\\\"actual_md5\\\",\\\"created_by\\\",\\\"type\\\",\\\"name\\\",\\\"repo\\\",\\\"original_sha1\\\",\\\"size\\\",\\\"path\\\")
+            """.replaceAll(" ", "").replaceAll("\n", "")
 
             def releaseBundleBody = """
                 {
@@ -159,8 +159,7 @@ node('generic') {
 
             archiveArtifacts artifacts: 'release-bundle-body.json'
 
-            sh "curl -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
+            sh "curl -v -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
         }
     }
-
 }
