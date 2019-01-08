@@ -51,6 +51,7 @@ node('generic') {
               {
                   "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${env.BUILD_NUMBER}-SNAPSHOT/java-project-*.jar",
                   "target": "target/downloads/"
+                  "flat": "true"
                 }
              ]
             }"""
@@ -60,8 +61,7 @@ node('generic') {
         def dockerImageTag = "${rtIpAddress}/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
         dockerBuildInfo.env.collect()
-        def dockerBuildInfo2 = rtDocker.push dockerImageTag, 'docker-repo'
-        dockerBuildInfo.append dockerBuildInfo2
+        rtDocker.push(dockerImageTag, 'docker-repo', dockerBuildInfo)
         server.publishBuildInfo dockerBuildInfo
         def dockerScanConfig = [
                 'buildName'      : dockerBuildInfo.name,
