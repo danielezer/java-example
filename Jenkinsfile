@@ -7,11 +7,6 @@ node('generic') {
     }
 
     stage("Build+Deploy") {
-        String jdktool = tool name: "jdk8"
-        List javaEnv = [
-                "JAVA_HOME=${jdktool}"
-        ]
-
         server = Artifactory.server "local-artifactory"
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
