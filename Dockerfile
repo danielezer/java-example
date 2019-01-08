@@ -1,6 +1,6 @@
 FROM openjdk:8u181-jre-alpine3.8
 
-COPY target/java-project.jar /opt/dckr-app/
+COPY target/downloads/*.jar /opt/dckr-app/
 
 WORKDIR /opt/dckr-app/
 
