@@ -33,11 +33,7 @@ node('generic') {
     }
 
     stage("Build docker image") {
-        def rtDocker = Artifactory.docker server: server
-        def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
-        docker.build(dockerImageTag)
-        def dockerBuildInfo = rtDocker.push dockerImageTag, 'docker-repo'
-
+        def dockerBuildInfo = Artifactory.newBuildInfo()
         def downloadSpec = """{
              "files": [
               {
@@ -48,6 +44,11 @@ node('generic') {
             }"""
 
         server.download spec: downloadSpec, buildInfo: dockerBuildInfo
+        def rtDocker = Artifactory.docker server: server
+        def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
+        docker.build(dockerImageTag)
+        rtDocker.push dockerImageTag, 'docker-repo', buildInfo: dockerBuildInfo
+
 
 
 
