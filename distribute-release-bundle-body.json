@@ -1,0 +1,8 @@
+{
+  "distribution_rules": [
+    {
+      "service_name": "*",
+      "site_name": "*",
+    }
+  ]
+}
