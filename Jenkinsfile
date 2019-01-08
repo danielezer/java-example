@@ -27,9 +27,23 @@ node('generic') {
                     'buildNumber': buildInfo.number,
                     'failBuild'  : true
             ]
-            def scanResult = server.xrayScan scanConfig
-            echo scanResult as String
+            server.xrayScan scanConfig
         }
+
+
+        def promotionConfig = [
+                'buildName'          : buildInfo.name,
+                'buildNumber'        : buildInfo.number,
+                'targetRepo'         : 'stable-maven-repo',
+                'comment'            : 'This is a stable java-project version',
+                'status'             : 'Released',
+                'sourceRepo'         : 'libs-snapshot-local',
+                'copy'               : true,
+                'failFast'           : true
+        ]
+
+        server.promote promotionConfig
+
     }
 
     stage("Build docker image") {
@@ -57,7 +71,20 @@ node('generic') {
                 'buildNumber'    : dockerBuildInfo.number,
                 'failBuild'      : true
         ]
-        def dockerScanResult = server.xrayScan dockerScanConfig
-        echo dockerScanResult as String
+        server.xrayScan dockerScanConfig
+
+        def dockerPromotionConfig = [
+                'buildName'          : dockerBuildInfo.name,
+                'buildNumber'        : dockerBuildInfo.number,
+                'targetRepo'         : 'stable-docker-repo',
+                'comment'            : 'This is a stable java-project docker image',
+                'status'             : 'Released',
+                'sourceRepo'         : 'docker-repo',
+                'copy'               : true,
+                'failFast'           : true
+        ]
+
+        Artifactory.addInteractivePromotion server: server, promotionConfig: dockerPromotionConfig, displayName: "Promote docker image to stable repo"
+
     }
 }
