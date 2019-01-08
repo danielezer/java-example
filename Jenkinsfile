@@ -12,7 +12,7 @@ node('generic') {
                 "JAVA_HOME=${jdktool}"
         ]
 
-        withEnv(javaEnv) {
+        withEnv(javaEnv + ["DOCKER_OPTS=--insecure-registry=35.205.28.253"]) {
             server = Artifactory.server "local-artifactory"
             def rtMaven = Artifactory.newMavenBuild()
             rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
