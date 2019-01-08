@@ -1,6 +1,7 @@
 node('generic') {
 
     def server
+    def rtUrl
 
     stage("checkout") {
         checkout scm
@@ -8,6 +9,8 @@ node('generic') {
 
     stage("Build+Deploy") {
         server = Artifactory.server "local-artifactory"
+        rtUrl = server.url
+        rtUrl = rtUrl ~/\/artifactory$/
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
         rtMaven.tool = 'maven-3.5.3'
@@ -51,7 +54,7 @@ node('generic') {
 
         server.download spec: downloadSpec, buildInfo: dockerBuildInfo
         def rtDocker = Artifactory.docker server: server
-        def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
+        def dockerImageTag = "${rtUrl}/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
         dockerBuildInfo.env.collect()
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
