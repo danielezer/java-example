@@ -1,7 +1,7 @@
 node('generic') {
 
     def server
-    def rtUrl
+    def rtIpAddress
 
     stage("checkout") {
         checkout scm
@@ -9,15 +9,17 @@ node('generic') {
 
     stage("Build+Deploy") {
         server = Artifactory.server "local-artifactory"
-        rtUrl = server.url
-        rtUrl = rtUrl ~/\/artifactory$/
+        rtFullUrl = server.url
+        rtIpAddress = rtFullUrl - ~/^http?.:\/\// - ~ /\/artifactory$/
+        
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
         rtMaven.tool = 'maven-3.5.3'
         String mvnGoals = "-B clean install -DartifactVersion=${env.BUILD_NUMBER} -s settings.xml"
-        def buildInfo = rtMaven.run pom: 'pom.xml', goals: mvnGoals
-        buildInfo.env.collect()
+        def buildInfo = Artifactory.newBuildInfo()
         buildInfo.name = "java-${env.JOB_NAME}"
+        buildInfo.env.collect()
+        rtMaven.run pom: 'pom.xml', goals: mvnGoals, buildInfo: buildInfo
         server.publishBuildInfo buildInfo
         def scanConfig = [
                 'buildName'  : buildInfo.name,
@@ -43,6 +45,7 @@ node('generic') {
 
     stage("Build docker image") {
         def dockerBuildInfo = Artifactory.newBuildInfo()
+        dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         def downloadSpec = """{
              "files": [
               {
@@ -54,10 +57,9 @@ node('generic') {
 
         server.download spec: downloadSpec, buildInfo: dockerBuildInfo
         def rtDocker = Artifactory.docker server: server
-        def dockerImageTag = "${rtUrl}/docker-java:${env.BUILD_NUMBER}"
+        def dockerImageTag = "${rtIpAddress}/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
         dockerBuildInfo.env.collect()
-        dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         def dockerBuildInfo2 = rtDocker.push dockerImageTag, 'docker-repo'
         dockerBuildInfo.append dockerBuildInfo2
         server.publishBuildInfo dockerBuildInfo
