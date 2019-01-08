@@ -102,38 +102,20 @@ node('generic') {
             def rtServiceId = sh(returnStdout: true, script: "curl -s -u ${ARTIFACTORY_CREDS} -X GET ${rtFullUrl}/api/system/service_id").trim()
 
             def aqlQuery = """
-            items.find({
-              \\\"\$and\\\": [
-                {
-                  \\\"\$or\\\": [
+                items.find({
+                  \\\"\$and\\\": [
                     {
-                      \\\"repo\\\": {
-                        \\\"\$eq\\\": \\\"${mavenPromotionRepo}\\\"
-                      }
+                      \\\"repo\\\": \\\"${mavenPromotionRepo}\\\"
+                    },
+                    {
+                      \\\"@build.name\\\": \\\"${mavenBuildName}\\\"
+                    },
+                    {
+                      \\\"@build.number\\\": \\\"${buildNumber}\\\"
                     }
                   ]
-                },
-                {
-                  \\\"\$or\\\": [
-                    {
-                      \\\"\$and\\\": [
-                        {
-                          \\\"artifact.module.build.name\\\": {
-                            \\\"\$eq\\\": \\\"${mavenBuildName}\\\"
-                          }
-                        },
-                        {
-                          \\\"artifact.module.build.number\\\": {
-                            \\\"\$eq\\\": \\\"${buildNumber}\\\"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }).include(\\\"sha256\\\",\\\"updated\\\",\\\"modified_by\\\",\\\"created\\\",\\\"id\\\",\\\"original_md5\\\",\\\"depth\\\",\\\"actual_sha1\\\",\\\"property.value\\\",\\\"modified\\\",\\\"property.key\\\",\\\"actual_md5\\\",\\\"created_by\\\",\\\"type\\\",\\\"name\\\",\\\"repo\\\",\\\"original_sha1\\\",\\\"size\\\",\\\"path\\\")
-            """.replaceAll(" ", "").replaceAll("\n", "")
+                })
+                """.replaceAll(" ", "").replaceAll("\n", "")
 
             def releaseBundleBody = """
                 {
