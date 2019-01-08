@@ -141,7 +141,7 @@ node('generic') {
 
             archiveArtifacts artifacts: 'release-bundle-body.json'
 
-            sh "curl -v -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
+            sh "curl -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
         }
     }
 }
