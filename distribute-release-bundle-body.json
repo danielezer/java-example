@@ -1,4 +1,5 @@
 {
+  "dry_run": false,
   "distribution_rules": [
     {
       "service_name": "*",
