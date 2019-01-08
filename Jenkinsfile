@@ -21,7 +21,6 @@ node('generic') {
             def buildInfo = rtMaven.run pom: 'pom.xml', goals: mvnGoals
             buildInfo.env.collect()
             dockerBuildInfo.name = "java-${env.JOB_NAME}"
-            buildInfo.number = env.BUILD_NUMBER
             server.publishBuildInfo buildInfo
             def scanConfig = [
                     'buildName'  : buildInfo.name,
@@ -39,7 +38,6 @@ node('generic') {
         def dockerBuildInfo = rtDocker.push "35.205.28.253/docker-java:${env.BUILD_NUMBER}", 'docker-repo'
         dockerBuildInfo.env.capture = true
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
-        buildInfo.number = env.BUILD_NUMBER
         server.publishBuildInfo dockerBuildInfo
         def dockerScanConfig = [
                 'buildName'      : buildInfo.name,
