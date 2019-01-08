@@ -37,6 +37,21 @@ node('generic') {
         def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
         def dockerBuildInfo = rtDocker.push dockerImageTag, 'docker-repo'
+
+        def downloadSpec = """{
+            "files": [
+                {
+                  "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${env.BUILD_NUMBER}-SNAPSHOT/java-project-*.jar",
+                  "target": "target/java-project.jar",
+                  "regexp": "true"
+                },
+            ]
+        }"""
+
+        server.download spec: downloadSpec, buildInfo: dockerBuildInfo
+
+
+
         dockerBuildInfo.env.collect()
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         server.publishBuildInfo dockerBuildInfo
