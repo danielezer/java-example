@@ -39,14 +39,13 @@ node('generic') {
         def dockerBuildInfo = rtDocker.push dockerImageTag, 'docker-repo'
 
         def downloadSpec = """{
-            "files": [
-                {
+             "files": [
+              {
                   "pattern": "libs-snapshot-local/com/mkyong/hashing/java-project/${env.BUILD_NUMBER}-SNAPSHOT/java-project-*.jar",
-                  "target": "target/java-project.jar",
-                  "regexp": "true"
-                },
-            ]
-        }"""
+                  "target": "target/java-project.jar"
+                }
+             ]
+            }"""
 
         server.download spec: downloadSpec, buildInfo: dockerBuildInfo
 
