@@ -149,6 +149,27 @@ node('generic') {
     stage('Distribute release bundle') {
         withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
             sh "curl -s -I -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber} -T distribute-release-bundle-body.json"
+
+            for (i = 0; true; i++) {
+
+                def res = sh(returnStdout: true,
+                        script: "curl -s -f -u ${ARTIFACTORY_CREDS} " +
+                                "-X GET ${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution").trim()
+
+                def jsonResult = readJSON text: res
+                def distributionStatus = jsonResult.status.unique()
+                println "Current status:  ${distributionStatus}"
+
+                if (distributionStatus == ['COMPLETED']) {
+                    print "Distribution finished successfully!"
+                    break
+                } else {
+                    if (i >= 30) {
+                        error("Timed out while waiting for distribution to complete")
+                    }
+                }
+                sleep 2
+            }
         }
     }
 }
