@@ -37,7 +37,7 @@ node('generic') {
         def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
         def dockerBuildInfo = rtDocker.push dockerImageTag, 'docker-repo'
-        dockerBuildInfo.env.capture = true
+        dockerBuildInfo.env.collect()
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         server.publishBuildInfo dockerBuildInfo
         def dockerScanConfig = [
