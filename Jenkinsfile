@@ -142,13 +142,13 @@ node('generic') {
 
             archiveArtifacts artifacts: 'release-bundle-body.json'
 
-            sh "curl -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
+            sh "curl -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
         }
     }
 
     stage('Distribute release bundle') {
         withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
-            sh "curl -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber} -T distribute-release-bundle-body.json"
+            sh "curl -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber} -T distribute-release-bundle-body.json"
         }
     }
 }
