@@ -47,13 +47,10 @@ node('generic') {
         def rtDocker = Artifactory.docker server: server
         def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
         docker.build(dockerImageTag)
-        rtDocker.push dockerImageTag, 'docker-repo', buildInfo: dockerBuildInfo
-
-
-
-
         dockerBuildInfo.env.collect()
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
+        def dockerBuildInfo2 = rtDocker.push dockerImageTag, 'docker-repo'
+        dockerBuildInfo.append dockerBuildInfo2
         server.publishBuildInfo dockerBuildInfo
         def dockerScanConfig = [
                 'buildName'      : dockerBuildInfo.name,
