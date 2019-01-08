@@ -41,8 +41,8 @@ node('generic') {
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         server.publishBuildInfo dockerBuildInfo
         def dockerScanConfig = [
-                'buildName'      : buildInfo.name,
-                'buildNumber'    : buildInfo.number,
+                'buildName'      : dockerBuildInfo.name,
+                'buildNumber'    : dockerBuildInfo.number,
                 'failBuild'      : true
         ]
         def dockerScanResult = server.xrayScan dockerScanConfig
