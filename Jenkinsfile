@@ -34,8 +34,9 @@ node('generic') {
 
     stage("Build docker image") {
         def rtDocker = Artifactory.docker server: server
-        rtDocker.tool = 'docker-latest'
-        def dockerBuildInfo = rtDocker.push "35.205.28.253/docker-java:${env.BUILD_NUMBER}", 'docker-repo'
+        def dockerImageTag = "35.205.28.253/docker-java:${env.BUILD_NUMBER}"
+        docker.build(dockerImageTag)
+        def dockerBuildInfo = rtDocker.push dockerImageTag, 'docker-repo'
         dockerBuildInfo.env.capture = true
         dockerBuildInfo.name = "docker-${env.JOB_NAME}"
         server.publishBuildInfo dockerBuildInfo
