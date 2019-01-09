@@ -13,6 +13,7 @@ timestamps {
         def mavenPromotionRepo = 'stable-maven-repo'
         def distributionUrl = "http://35.195.75.184"
         def releaseBundleName = 'java-project-bundle'
+        def pipelineUtils
 
         stage("checkout") {
             checkout scm
@@ -20,13 +21,13 @@ timestamps {
             def jobName = env.JOB_NAME
             mavenBuildName = "maven-${jobName}"
             dockerBuildName = "docker-${jobName}"
-        }
-
-        stage("Build+Deploy") {
             server = Artifactory.server "local-artifactory"
             rtFullUrl = server.url
             rtIpAddress = rtFullUrl - ~/^http?.:\/\// - ~/\/artifactory$/
+            pipelineUtils = load 'pipelineUtils.groovy'
+        }
 
+        stage("Build+Deploy") {
             def rtMaven = Artifactory.newMavenBuild()
             rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
             rtMaven.tool = 'maven-3.5.3'
@@ -160,28 +161,23 @@ timestamps {
             withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
                 sh "curl -s -I -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber} -T distribute-release-bundle-body.json"
 
-                for (i = 0; true; i++) {
-
+                pipelineUtils.withRetry(30, 2) {
                     def res = sh(returnStdout: true,
                             script: "curl -s -f -u ${ARTIFACTORY_CREDS} " +
                                     "-X GET ${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution").trim()
 
                     def jsonResult = readJSON text: res
                     def distributionStatus = jsonResult.status.unique()
-                    distributionStatus = distributionStatus.collect{ it.toUpperCase() }
+                    distributionStatus = distributionStatus.collect { it.toUpperCase() }
                     println "Current status:  ${distributionStatus}"
 
                     if (distributionStatus == ['COMPLETED']) {
                         print "Distribution finished successfully!"
-                        break
                     } else {
-                        if (i >= 30) {
-                            error("Timed out while waiting for distribution to complete")
-                        } else if (distributionStatus.contains('FAILED')) {
+                        if (distributionStatus.contains('FAILED')) {
                             error("Distribution failed with error: ${jsonResult}")
                         }
                     }
-                    sleep 2
                 }
             }
         }
