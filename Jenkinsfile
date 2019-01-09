@@ -74,7 +74,7 @@ timestamps {
             server.download spec: downloadSpec, buildInfo: dockerBuildInfo
             def rtDocker = Artifactory.docker server: server
             def dockerImageTag = "${rtIpAddress}/docker-java:${buildNumber}"
-            docker.build(dockerImageTag)
+            docker.build(dockerImageTag, "--build-arg DOCKER_REGISTRY_URL=${rtIpAddress} .")
             dockerBuildInfo.env.collect()
             rtDocker.push(dockerImageTag, 'docker-repo', dockerBuildInfo)
             server.publishBuildInfo dockerBuildInfo
