@@ -15,14 +15,14 @@ def withRetry(iterations, sleepTime, Closure closure) {
     }
 }
 
-def restGetJson(url, credentialId) {
-    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId, consoleLogResponseBody: true
+def restGet(url, credentialId, contentType = 'APPLICATION_JSON') {
+    res = httpRequest url: url, contentType: contentType, authentication: credentialId, consoleLogResponseBody: true
     println res.getStatus()
     res.getContent()
 }
 
-def restPostJson(url, credentialId, body) {
-    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId, httpMode: 'POST', requestBody: body, consoleLogResponseBody: true
+def restPost(url, credentialId, body, contentType = 'APPLICATION_JSON') {
+    res = httpRequest url: url, contentType: contentType, authentication: credentialId, httpMode: 'POST', requestBody: body, consoleLogResponseBody: true
     println res.getStatus()
     res.getContent()
 }

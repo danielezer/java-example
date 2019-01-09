@@ -103,7 +103,7 @@ timestamps {
 
         stage("Create release bundle") {
 
-            rtServiceId = pipelineUtils.restGetJson("${rtFullUrl}/api/system/service_id", artifactoryCredentialId)
+            rtServiceId = pipelineUtils.restGet("${rtFullUrl}/api/system/service_id", artifactoryCredentialId)
 
 
             def aqlQuery = """
@@ -151,15 +151,15 @@ timestamps {
             releaseBundleBodyJson = JsonOutput.toJson(releaseBundleBody)
 
 
-            res = pipelineUtils.restPostJson("${distributionUrl}/api/v1/release_bundle", artifactoryCredentialId, releaseBundleBodyJson)
+            res = pipelineUtils.restPost("${distributionUrl}/api/v1/release_bundle", artifactoryCredentialId, releaseBundleBodyJson)
         }
 
         stage('Distribute release bundle') {
             def distributeReleaseBundleBody = readJSON file: 'distribute-release-bundle-body.json'
-            res = pipelineUtils.restPostJson("${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", artifactoryCredentialId, distributeReleaseBundleBody.toString())
+            res = pipelineUtils.restPost("${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", artifactoryCredentialId, distributeReleaseBundleBody.toString())
 
             for (i = 0; true; i++) {
-                res = pipelineUtils.restGetJson("${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", artifactoryCredentialId)
+                res = pipelineUtils.restGet("${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", artifactoryCredentialId)
 
                 def jsonResult = readJSON text: res
                 def distributionStatus = jsonResult.status.unique()
