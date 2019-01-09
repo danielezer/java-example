@@ -160,7 +160,7 @@ timestamps {
             res = httpRequest url: "${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", consoleLogResponseBody: true, authentication: 'artifactory-login', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: distributeReleaseBundleBody.toString()
             res.getStatus()
 
-            pipelineUtils.withRetry(30, 2) {
+            for (i = 0; true; i++) {
                 res = httpRequest url: "${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", authentication: 'artifactory-login', contentType: 'APPLICATION_JSON'
                 resBody = res.getContent()
 
@@ -169,7 +169,16 @@ timestamps {
                 distributionStatus = distributionStatus.collect { it.toUpperCase() }
                 println "Current status:  ${distributionStatus}"
 
-                assert distributionStatus == ['COMPLETED']
+                if (distributionStatus == ['COMPLETED']) {
+                    println "Distribution finished successfully"
+                    break
+                } else if (distributionStatus.contains('FAILED')) {
+                    error("Distribution failed. Response body: ${jsonResult}")
+                } else if (i >= 30) {
+                    error("Timed out waiting for distribution to complete")
+                }
+
+                sleep 2
 
             }
         }
