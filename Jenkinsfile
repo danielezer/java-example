@@ -160,7 +160,7 @@ timestamps {
 
                     def jsonResult = readJSON text: res
                     def distributionStatus = jsonResult.status.unique()
-                    distributionStatus = distributionStatus*.toUpperCase()
+                    distributionStatus = distributionStatus.collect{ it.toUpperCase() }
                     println "Current status:  ${distributionStatus}"
 
                     if (distributionStatus == ['COMPLETED']) {
