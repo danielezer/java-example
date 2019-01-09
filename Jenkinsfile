@@ -96,8 +96,7 @@ timestamps {
                     'failFast'   : true
             ]
 
-            Artifactory.addInteractivePromotion server: server, promotionConfig: dockerPromotionConfig, displayName: "Promote docker image to stable repo"
-
+            server.promote dockerPromotionConfig
         }
 
         stage("Create release bundle") {
@@ -108,17 +107,26 @@ timestamps {
 
                 def aqlQuery = """
                 items.find({
-                  \"\$and\": [
-                    {
-                      \"repo\": \"${mavenPromotionRepo}\"
-                    },
-                    {
-                      \"@build.name\": \"${mavenBuildName}\"
-                    },
-                    {
-                      \"@build.number\": \"${buildNumber}\"
-                    }
-                  ]
+                    \"\$and\": [
+                            {
+                                \"repo\": {
+                                \"\$match\": \"stable-*-repo\"
+                            }
+                            },
+                            {
+                                \"\$or\": [
+                                    {
+                                        \"@build.name\": \"${mavenBuildName}\"
+                                    },
+                                    {
+                                        \"@build.name\": \"${dockerBuildName}\"
+                                    }
+                            ]
+                            },
+                            {
+                                \"@build.number\": \"${buildNumber}\"
+                            }
+                    ]
                 })
                 """.replaceAll(" ", "").replaceAll("\n", "")
 
