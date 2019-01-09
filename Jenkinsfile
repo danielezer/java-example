@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+
 timestamps {
 
     node('generic') {
@@ -106,43 +108,41 @@ timestamps {
 
                 def aqlQuery = """
                 items.find({
-                  \\\"\$and\\\": [
+                  \"\$and\": [
                     {
-                      \\\"repo\\\": \\\"${mavenPromotionRepo}\\\"
+                      \"repo\": \"${mavenPromotionRepo}\"
                     },
                     {
-                      \\\"@build.name\\\": \\\"${mavenBuildName}\\\"
+                      \"@build.name\": \"${mavenBuildName}\"
                     },
                     {
-                      \\\"@build.number\\\": \\\"${buildNumber}\\\"
+                      \"@build.number\": \"${buildNumber}\"
                     }
                   ]
                 })
                 """.replaceAll(" ", "").replaceAll("\n", "")
 
-                def releaseBundleBody = """
-                {
-                  \"name\": \"${releaseBundleName}\",
-                  \"version\": \"${buildNumber}\",
-                  \"dry_run\": false,
-                  \"sign_immediately\": true,
-                  \"description\": \"Release bundle for the example java-project\",
-                  \"spec\": {
-                    \"source_artifactory_id\": \"${rtServiceId}\",
-                    \"queries\": [
-                      {
-                        \"aql\": \"${aqlQuery}\",
-                        \"query_name\": \"java-project-query\"
-                      }
-                    ]
-                  }
-                }
-            """
+                def releaseBundleBody = [
+                        'name': "${releaseBundleName}",
+                        'version': "${buildNumber}",
+                        'dry_run': false,
+                        'sign_immediately': true,
+                        'description': 'Release bundle for the example java-project',
+                        'spec': [
+                                'source_artifactory_id': "${rtServiceId}",
+                                'queries': [
+                                        [
+                                                'aql': "${aqlQuery}",
+                                                'query_name': 'java-project-query'
+                                        ]
+                                ]
+                        ]
+                ]
+
+                releaseBundleBodyJson = JsonOutput.toJson(releaseBundleBody)
 
                 def releaseBundleBodyJsonFile = 'release-bundle-body.json'
-                writeFile file: 'release-bundle-body.json', text: releaseBundleBody
-
-                archiveArtifacts artifacts: 'release-bundle-body.json'
+                writeFile file: 'release-bundle-body.json', text: releaseBundleBodyJson
 
                 sh "curl -s -I -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
             }
