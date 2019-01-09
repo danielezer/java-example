@@ -1,18 +1,23 @@
 def withRetry(iterations, sleepTime, Closure closure) {
-    for (i = 0; true; i++) {
+    for (i = 0; i < iterations; i++) {
         try {
             println "Try number ${i}"
             closure()
-            break
+            return
         } catch (Exception e) {
-            if (i < iterations) {
-                sleep sleepTime
-                println "Retrying..."
-            } else {
-                error("Exceeded number of retries")
-            }
+            sleep sleepTime
+            println "Retrying..."
         }
     }
+
+    error("Exceeded number of retries")
+
+}
+
+def restGetJson(url, credentialId) {
+    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId
+    res.getStatus()
+    res.getContent()
 }
 
 return this

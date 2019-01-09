@@ -14,6 +14,7 @@ timestamps {
         def distributionUrl = "http://35.195.75.184"
         def releaseBundleName = 'java-project-bundle'
         def pipelineUtils
+        def res
 
         stage("checkout") {
             checkout scm
@@ -102,83 +103,74 @@ timestamps {
 
         stage("Create release bundle") {
 
-            withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
+            res = httpRequest url: "${rtFullUrl}/api/system/service_id", contentType: "APPLICATION_JSON", authentication: 'artifactory-login'
+            def rtServiceId = res.getContent()
 
-                def rtServiceId = sh(returnStdout: true, script: "curl -s -u ${ARTIFACTORY_CREDS} -X GET ${rtFullUrl}/api/system/service_id").trim()
-
-                def aqlQuery = """
-                items.find({
-                    \"\$and\": [
-                            {
-                                \"repo\": {
-                                \"\$match\": \"stable-*-repo\"
-                            }
-                            },
-                            {
-                                \"\$or\": [
-                                    {
-                                        \"@build.name\": \"${mavenBuildName}\"
-                                    },
-                                    {
-                                        \"@build.name\": \"${dockerBuildName}\"
-                                    }
-                            ]
-                            },
-                            {
-                                \"@build.number\": \"${buildNumber}\"
-                            }
-                    ]
-                })
-                """.replaceAll(" ", "").replaceAll("\n", "")
-
-                def releaseBundleBody = [
-                        'name': "${releaseBundleName}",
-                        'version': "${buildNumber}",
-                        'dry_run': false,
-                        'sign_immediately': true,
-                        'description': 'Release bundle for the example java-project',
-                        'spec': [
-                                'source_artifactory_id': "${rtServiceId}",
-                                'queries': [
-                                        [
-                                                'aql': "${aqlQuery}",
-                                                'query_name': 'java-project-query'
-                                        ]
-                                ]
+            def aqlQuery = """
+            items.find({
+                \"\$and\": [
+                        {
+                            \"repo\": {
+                            \"\$match\": \"stable-*-repo\"
+                        }
+                        },
+                        {
+                            \"\$or\": [
+                                {
+                                    \"@build.name\": \"${mavenBuildName}\"
+                                },
+                                {
+                                    \"@build.name\": \"${dockerBuildName}\"
+                                }
                         ]
+                        },
+                        {
+                            \"@build.number\": \"${buildNumber}\"
+                        }
                 ]
+            })
+            """.replaceAll(" ", "").replaceAll("\n", "")
 
-                releaseBundleBodyJson = JsonOutput.toJson(releaseBundleBody)
+            def releaseBundleBody = [
+                    'name': "${releaseBundleName}",
+                    'version': "${buildNumber}",
+                    'dry_run': false,
+                    'sign_immediately': true,
+                    'description': 'Release bundle for the example java-project',
+                    'spec': [
+                            'source_artifactory_id': "${rtServiceId}",
+                            'queries': [
+                                    [
+                                            'aql': "${aqlQuery}",
+                                            'query_name': 'java-project-query'
+                                    ]
+                            ]
+                    ]
+            ]
 
-                def releaseBundleBodyJsonFile = 'release-bundle-body.json'
-                writeFile file: 'release-bundle-body.json', text: releaseBundleBodyJson
+            releaseBundleBodyJson = JsonOutput.toJson(releaseBundleBody)
 
-                sh "curl -s -I -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/release_bundle -T ${releaseBundleBodyJsonFile}"
-            }
+
+            res = httpRequest url: "${distributionUrl}/api/v1/release_bundle", authentication: 'artifactory-login', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: releaseBundleBodyJson
+            res.getStatus()
         }
 
         stage('Distribute release bundle') {
-            withCredentials([usernameColonPassword(credentialsId: 'artifactory-login', variable: 'ARTIFACTORY_CREDS')]) {
-                sh "curl -s -I -f -H 'Content-Type: application/json' -u ${ARTIFACTORY_CREDS} -X POST ${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber} -T distribute-release-bundle-body.json"
+            def distributeReleaseBundleBody = readJSON file: 'distribute-release-bundle-body.json'
+            res = httpRequest url: "${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", consoleLogResponseBody: true, authentication: 'artifactory-login', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: distributeReleaseBundleBody.toString()
+            res.getStatus()
 
-                pipelineUtils.withRetry(30, 2) {
-                    def res = sh(returnStdout: true,
-                            script: "curl -s -f -u ${ARTIFACTORY_CREDS} " +
-                                    "-X GET ${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution").trim()
+            pipelineUtils.withRetry(30, 2) {
+                res = httpRequest url: "${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", authentication: 'artifactory-login', contentType: 'APPLICATION_JSON'
+                resBody = res.getContent()
 
-                    def jsonResult = readJSON text: res
-                    def distributionStatus = jsonResult.status.unique()
-                    distributionStatus = distributionStatus.collect { it.toUpperCase() }
-                    println "Current status:  ${distributionStatus}"
+                def jsonResult = readJSON text: resBody
+                def distributionStatus = jsonResult.status.unique()
+                distributionStatus = distributionStatus.collect { it.toUpperCase() }
+                println "Current status:  ${distributionStatus}"
 
-                    if (distributionStatus == ['COMPLETED']) {
-                        print "Distribution finished successfully!"
-                    } else {
-                        if (distributionStatus.contains('FAILED')) {
-                            error("Distribution failed with error: ${jsonResult}")
-                        }
-                    }
-                }
+                assert distributionStatus == ['COMPLETED']
+
             }
         }
     }
