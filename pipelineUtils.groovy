@@ -16,8 +16,14 @@ def withRetry(iterations, sleepTime, Closure closure) {
 }
 
 def restGetJson(url, credentialId) {
-    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId
-    res.getStatus()
+    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId, consoleLogResponseBody: true
+    println res.getStatus()
+    res.getContent()
+}
+
+def restPostJson(url, credentialId, body) {
+    res = httpRequest url: url, contentType: "APPLICATION_JSON", authentication: credentialId, httpMode: 'POST', requestBody: body, consoleLogResponseBody: true
+    println res.getStatus()
     res.getContent()
 }
 

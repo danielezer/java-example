@@ -14,7 +14,7 @@ timestamps {
         def distributionUrl = "http://35.195.75.184"
         def releaseBundleName = 'java-project-bundle'
         def pipelineUtils
-        def res
+        def artifactoryCredentialId = 'artifactory-login'
 
         stage("checkout") {
             checkout scm
@@ -103,8 +103,8 @@ timestamps {
 
         stage("Create release bundle") {
 
-            res = httpRequest url: "${rtFullUrl}/api/system/service_id", contentType: "APPLICATION_JSON", authentication: 'artifactory-login'
-            def rtServiceId = res.getContent()
+            res = pipelineUtils.restGetJson("${rtFullUrl}/api/system/service_id", artifactoryCredentialId)
+
 
             def aqlQuery = """
             items.find({
@@ -151,20 +151,17 @@ timestamps {
             releaseBundleBodyJson = JsonOutput.toJson(releaseBundleBody)
 
 
-            res = httpRequest url: "${distributionUrl}/api/v1/release_bundle", authentication: 'artifactory-login', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: releaseBundleBodyJson
-            res.getStatus()
+            res = pipelineUtils.restPostJson("${distributionUrl}/api/v1/release_bundle", artifactoryCredentialId, releaseBundleBodyJson)
         }
 
         stage('Distribute release bundle') {
             def distributeReleaseBundleBody = readJSON file: 'distribute-release-bundle-body.json'
-            res = httpRequest url: "${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", consoleLogResponseBody: true, authentication: 'artifactory-login', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: distributeReleaseBundleBody.toString()
-            res.getStatus()
+            res = pipelineUtils.restPostJson("${distributionUrl}/api/v1/distribution/${releaseBundleName}/${buildNumber}", artifactoryCredentialId, distributeReleaseBundleBody.toString())
 
             for (i = 0; true; i++) {
-                res = httpRequest url: "${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", authentication: 'artifactory-login', contentType: 'APPLICATION_JSON'
-                resBody = res.getContent()
+                res = pipelineUtils.restGetJson("${distributionUrl}/api/v1/release_bundle/${releaseBundleName}/${buildNumber}/distribution", artifactoryCredentialId)
 
-                def jsonResult = readJSON text: resBody
+                def jsonResult = readJSON text: res
                 def distributionStatus = jsonResult.status.unique()
                 distributionStatus = distributionStatus.collect { it.toUpperCase() }
                 println "Current status:  ${distributionStatus}"
