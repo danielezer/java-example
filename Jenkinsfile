@@ -1,5 +1,15 @@
 import groovy.json.JsonOutput
 
+properties(
+    [
+        parameters(
+            [
+                string(name: 'distributionUrl',defaultValue: 'http://35.195.75.184', description: 'Distribution server URL')
+            ]
+        )
+    ]
+)
+
 timestamps {
 
     node('generic') {
@@ -11,7 +21,7 @@ timestamps {
         def mavenBuildName
         def dockerBuildName
         def mavenPromotionRepo = 'stable-maven-repo'
-        def distributionUrl = "http://35.195.75.184"
+        def distributionUrl = params.distributionUrl
         def releaseBundleName = 'java-project-bundle'
         def pipelineUtils
         def artifactoryCredentialId = 'artifactory-login'
