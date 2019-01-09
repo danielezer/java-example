@@ -160,6 +160,7 @@ timestamps {
 
                     def jsonResult = readJSON text: res
                     def distributionStatus = jsonResult.status.unique()
+                    distributionStatus = distributionStatus*.toUpperCase()
                     println "Current status:  ${distributionStatus}"
 
                     if (distributionStatus == ['COMPLETED']) {
@@ -168,7 +169,7 @@ timestamps {
                     } else {
                         if (i >= 30) {
                             error("Timed out while waiting for distribution to complete")
-                        } else if (distributionStatus.contains('Failed')) {
+                        } else if (distributionStatus.contains('FAILED')) {
                             error("Distribution failed with error: ${jsonResult}")
                         }
                     }
