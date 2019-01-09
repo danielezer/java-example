@@ -168,6 +168,8 @@ timestamps {
                     } else {
                         if (i >= 30) {
                             error("Timed out while waiting for distribution to complete")
+                        } else if (distributionStatus.contains('Failed')) {
+                            error("Distribution failed with error: ${jsonResult}")
                         }
                     }
                     sleep 2
