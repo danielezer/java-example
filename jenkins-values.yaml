@@ -3,8 +3,6 @@ managedConfig:
     # Top level key -> name of the cloud
     kube-cloud:
       type: kubernetes
-      # Default kubernetes namespace for slaves
-      namespace: jenkins
       # Pod templates
       templates:
         - name: kubeslave
