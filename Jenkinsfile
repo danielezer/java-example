@@ -12,7 +12,7 @@ properties(
 
 timestamps {
 
-    node('generic') {
+    node('kubeslave') {
 
         def server
         def rtFullUrl

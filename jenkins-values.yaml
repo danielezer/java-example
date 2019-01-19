@@ -1,0 +1,23 @@
+managedConfig:
+  clouds:
+    # Top level key -> name of the cloud
+    kube-cloud:
+      type: kubernetes
+      # Default kubernetes namespace for slaves
+      namespace: jenkins
+      # Pod templates
+      templates:
+        - name: kubeslave
+          # Only JNLP slaves are supported
+          image: jenkinsci/jnlp-slave:latest
+          # Labels are mandatory!
+          # Your pipeline jobs will need to use node(label){} in order to use this slave template
+          labels:
+            - k8s
+            - kubeslave
+          # Environment variables to pass to the slave container
+          environment:
+            DIND: 'true'
+            DOCKER_DAEMON_ARGS: "--insecure-registry=35.205.28.253"
+
+          privileged: 'true'
