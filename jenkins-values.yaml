@@ -26,3 +26,13 @@ managedConfig:
         type: maven
         installers:
           - id: '3.5.3'
+
+  artifactory:
+    useCredentialsPlugin: true
+    ## List of artifactory servers
+    artifactoryServers:
+    - serverId: local-artifactory
+      artifactoryUrl: http://35.205.28.253
+      # use credentialsId
+      deployerCredentialsConfig:
+        credentialsId: 'artifactory-login'
