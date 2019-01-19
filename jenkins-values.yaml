@@ -7,7 +7,7 @@ managedConfig:
       templates:
         - name: kubeslave
           # Only JNLP slaves are supported
-          image: jenkinsci/jnlp-slave:latest
+          image: odavid/jenkins-jnlp-slave:latest
           # Labels are mandatory!
           # Your pipeline jobs will need to use node(label){} in order to use this slave template
           labels:
@@ -19,3 +19,10 @@ managedConfig:
             DOCKER_DAEMON_ARGS: "--insecure-registry=35.205.28.253"
 
           privileged: 'true'
+
+  tools:
+    installations:
+      maven-3.5.3:
+        type: maven
+        installers:
+          - id: '3.5.3'
