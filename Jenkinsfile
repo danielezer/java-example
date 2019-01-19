@@ -42,7 +42,7 @@ timestamps {
             def rtMaven = Artifactory.newMavenBuild()
             rtMaven.deployer server: server, releaseRepo: 'libs-snapshot-local', snapshotRepo: 'libs-snapshot-local'
             rtMaven.tool = 'maven-3.5.3'
-            String mvnGoals = "-B clean install -DartifactVersion=${buildNumber} -s settings.xml"
+            String mvnGoals = "-B clean install -Dmaven.test.skip=true -DartifactVersion=${buildNumber} -s settings.xml"
             def buildInfo = Artifactory.newBuildInfo()
             buildInfo.name = mavenBuildName
             buildInfo.env.collect()
