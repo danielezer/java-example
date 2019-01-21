@@ -36,3 +36,8 @@ managedConfig:
       # use credentialsId
       deployerCredentialsConfig:
         credentialsId: 'artifactory-login'
+
+  script_approval:
+    approvals:
+      - method groovy.json.JsonBuilder call java.util.Map
+      - new groovy.json.JsonBuilder
